@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package test.product;
+
+option java_package = "com.github.os72.protocjar.test.product";
+option java_outer_classname = "ProductProto";
+
+message Product {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string category = 5;
+  bool available = 6;
+}
+
+message GetProductRequest {
+  int32 id = 1;
+}
+
+message GetProductResponse {
+  Product product = 1;
+  bool found = 2;
+}
+
