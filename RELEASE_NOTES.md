@@ -1,6 +1,11 @@
 protoc-jar-maven-plugin release notes
 =====================================
 
+#### 3.21.6 (22-Sep-2025)
+* Upgrade to protoc 3.21.6
+* Enhanced support for newer protobuf features
+* Improved compatibility with modern build environments
+
 #### 3.11.4 (7-Mar-2020)
 * Upgrade to protoc 3.11.4
 * Preserve native plugin artifact extension (issue #89)

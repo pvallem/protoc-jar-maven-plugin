@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package test.user;
+
+option java_package = "com.github.os72.protocjar.test.user";
+option java_outer_classname = "UserProto";
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string roles = 4;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  repeated string roles = 3;
+}
+
+message CreateUserResponse {
+  User user = 1;
+  bool success = 2;
+  string message = 3;
+}
+

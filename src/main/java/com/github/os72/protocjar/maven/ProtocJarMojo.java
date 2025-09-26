@@ -88,6 +88,25 @@ public class ProtocJarMojo extends AbstractMojo
 	private File[] inputDirectories;
 
 	/**
+	 * Specific proto files to compile. This parameter allows you to specify individual
+	 * .proto files instead of scanning entire directories. These files will be processed
+	 * in addition to any files found in inputDirectories.
+	 * 
+	 * Example usage:
+	 * <pre>
+	 * {@code
+	 * <protoFiles>
+	 *   <protoFile>src/main/proto/user.proto</protoFile>
+	 *   <protoFile>src/main/proto/product.proto</protoFile>
+	 * </protoFiles>
+	 * }
+	 * </pre>
+	 * 
+	 * @parameter property="protoFiles"
+	 */
+	private File[] protoFiles;
+
+	/**
 	 * This parameter lets you specify additional include paths to protoc.
 	 * 
 	 * @parameter property="includeDirectories"
@@ -365,6 +384,16 @@ public class ProtocJarMojo extends AbstractMojo
 		try {
 			long oldestOutputFileTime = minFileTime(outputTargets);
 			long newestInputFileTime = maxFileTime(inputDirectories);
+			
+			// Also check individual proto files if specified
+			if (protoFiles != null) {
+				for (File protoFile : protoFiles) {
+					if (protoFile != null && protoFile.exists()) {
+						newestInputFileTime = Math.max(newestInputFileTime, protoFile.lastModified());
+					}
+				}
+			}
+			
 			if (successFile.exists() && newestInputFileTime < oldestOutputFileTime && !missingOutputDirectory) {
 				getLog().info("Skipping code generation, proto files appear unchanged since last compilation");
 				performProtoCompilation(false);
@@ -429,6 +458,13 @@ public class ProtocJarMojo extends AbstractMojo
 				List<String> incs = Arrays.asList("**/*" + extension);
 				List<String> excs = new ArrayList<String>();
 				projectHelper.addResource(project, input.getAbsolutePath(), incs, excs);			
+			}
+		}
+		
+		if (protoFiles != null && protoFiles.length > 0) {
+			getLog().info("Individual proto files:");
+			for (File protoFile : protoFiles) {
+				getLog().info("    " + protoFile);
 			}
 		}
 		
@@ -612,12 +648,14 @@ public class ProtocJarMojo extends AbstractMojo
 		}
 		
 		FileFilter fileFilter = new FileFilter(extension);
+		
+		// Process proto files from inputDirectories
 		for (File input : inputDirectories) {
 			if (input == null) continue;
 			
 			if (input.exists() && input.isDirectory()) {
-				Collection<File> protoFiles = FileUtils.listFiles(input, fileFilter, TrueFileFilter.INSTANCE);
-				for (File protoFile : protoFiles) {
+				Collection<File> discoveredProtoFiles = FileUtils.listFiles(input, fileFilter, TrueFileFilter.INSTANCE);
+				for (File protoFile : discoveredProtoFiles) {
 					if (target.cleanOutputFolder || buildContext.hasDelta(protoFile.getPath())) {
 						processFile(protoFile, protocVersion, targetType, target.pluginPath, target.outputDirectory, target.outputOptions);
 					}
@@ -629,6 +667,27 @@ public class ProtocJarMojo extends AbstractMojo
 			else {
 				if (input.exists()) getLog().warn(input + " is not a directory");
 				else getLog().warn(input + " does not exist");
+			}
+		}
+		
+		// Process individually specified proto files
+		if (protoFiles != null) {
+			for (File protoFile : protoFiles) {
+				if (protoFile == null) continue;
+				
+				if (protoFile.exists() && protoFile.isFile()) {
+					if (target.cleanOutputFolder || buildContext.hasDelta(protoFile.getPath())) {
+						getLog().info("Processing specified proto file: " + protoFile);
+						processFile(protoFile, protocVersion, targetType, target.pluginPath, target.outputDirectory, target.outputOptions);
+					}
+					else {
+						getLog().info("Not changed " + protoFile);
+					}
+				}
+				else {
+					if (protoFile.exists()) getLog().warn("Specified proto file is not a regular file: " + protoFile);
+					else getLog().warn("Specified proto file does not exist: " + protoFile);
+				}
 			}
 		}
 		

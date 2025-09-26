@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package test.ignore;
+
+option java_package = "com.github.os72.protocjar.test.ignore";
+option java_outer_classname = "IgnoreProto";
+
+// This proto file should NOT be compiled when using protoFiles parameter
+// since it's not specified in the protoFiles list
+message IgnoredMessage {
+  string content = 1;
+}
+
